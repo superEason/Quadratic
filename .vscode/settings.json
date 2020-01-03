@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "D:\\ProgramData\\Anaconda3\\envs\\Quadratic\\python.exe",
+    "python.linting.pylintArgs": ["--generate-members"],
+
+}
