@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
-from model.quadraticnet import quadratic_network
+from model.quadraticnet import AlexNet
 from model.quadraticnet import ResNet18
 import argparse
 
@@ -48,8 +48,8 @@ valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=arg
 
 
 # model = LinearNeuralNet(input_size, 5, num_classes).to(device)
-# model = quadratic_network()
-model = ResNet18()
+model = AlexNet()
+# model = ResNet18()
 model = nn.DataParallel(model, device_ids=args.gpu_id).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
