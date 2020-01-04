@@ -9,6 +9,9 @@ from model.quadraticnet import AlexNet
 from model.quadraticnet import ResNet18
 import argparse
 
+import os
+import shutil
+from tensorboardX import SummaryWriter
 
 device = torch.device('cuda')
 
@@ -28,6 +31,12 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true', he
 parser.add_argument('-t', '--test', dest='test', action='store_true', help='test model on test set')
 
 args = parser.parse_args()
+
+checkpoint_path = 'checkpoint'
+summary_path = 'summary'
+
+if not os.path.exists(checkpoint_path):
+    os.makedirs(checkpoint_path)
 
 train_transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
 test_transform = transforms.Compose([transforms.ToTensor()])
@@ -55,6 +64,23 @@ criterion = nn.CrossEntropyLoss().cuda()
 optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 cudnn.benchmark = True
 
+best_prec = 0
+if args.resume:
+    if os.path.isfile(args.resume):
+        print('=> loading checkpoint "{}"'.format(args.resume))
+        checkpoint = torch.load(args.resume)
+        args.start_epoch = checkpoint['epoch']
+        best_prec = checkpoint['best_acc']
+        model.load_state_dict(checkpoint['state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        print("=> loaded checkpoint '{}' (epoch {} best_acc {})".format(args.resume, checkpoint['epoch'], best_prec))
+    else:
+        print("=> no checkpoint found at '{}'".format(args.resume))
+
+if not os.path.exists(summary_path):
+    os.makedirs(summary_path)
+
+writer = SummaryWriter(summary_path)
 
 for epoch in range(args.start_epoch, args.epochs):
     if epoch < 150:
@@ -68,6 +94,8 @@ for epoch in range(args.start_epoch, args.epochs):
         param_group['lr'] = lr
 
     model.train()
+    train_total = 0
+    train_correct = 0
     train_loss = 0
     # train for one epoch
     for i, (input, target) in enumerate(train_loader):
@@ -86,14 +114,21 @@ for epoch in range(args.start_epoch, args.epochs):
         train_loss += loss.item()
         ave_loss = train_loss/(i+1)
 
+        _, predicted = torch.max(output.data, 1)
+        train_total += target.size(0)
+        train_correct += (predicted == target).sum().item()
+
+        prec = train_correct / train_total
         if i % args.print_freq == 0:
-            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, args.epochs, i+1, len(train_loader), ave_loss))
+            writer.add_scalar('data/loss', ave_loss, epoch * len(train_loader) + i)
+            writer.add_scalar('data/prec', prec, epoch * len(train_loader) + i)
+            print('Epoch [{}/{}], Step [{}/{}], \
+                Loss: {:.5f}, Train_Acc:{:.2f}%'.format(epoch+1, args.epochs, i+1, len(train_loader), ave_loss, prec*100))
 
 
     # evaluate on test set
     # switch to evaluate mode
     model.eval()
-
     valid_correct = 0
     valid_total = 0
     with torch.no_grad():
@@ -107,9 +142,22 @@ for epoch in range(args.start_epoch, args.epochs):
             _, predicted = torch.max(output.data, 1)
             valid_total += target.size(0)
             valid_correct += (predicted == target).sum().item()
+    prec = valid_correct / valid_total
+    print('Accuary on test images:{:.2f}%'.format(prec*100))
+    writer.add_scalar('data/accuracy', prec, epoch)
 
-    print('Accuracy of the network on the {} test images: {} %'.format(len(valid_loader), 100 * valid_correct / valid_total))
+    is_best = prec > best_prec
+    best_prec = max(prec, best_prec)
 
+    filepath = os.path.join(checkpoint_path, 'checkpoint.pth.tar')
+    torch.save({
+            'epoch': epoch + 1,
+            'state_dict': model.state_dict(),
+            'best_acc': best_prec,
+            'optimizer': optimizer.state_dict(),
+        }, filepath)
+    if is_best:
+        shutil.copyfile(filepath, os.path.join(checkpoint_path, 'model_best.pth.tar'))
 
 
 

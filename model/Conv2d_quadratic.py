@@ -31,6 +31,7 @@ class _ConvNd(Module):
         self.output_padding = output_padding
         self.groups = groups
         self.padding_mode = padding_mode
+        self.bias = bias
         if transposed:
             self.weight_r = Parameter(torch.Tensor(
                 in_channels, out_channels // groups, *kernel_size))
@@ -45,12 +46,14 @@ class _ConvNd(Module):
                 out_channels, in_channels // groups, *kernel_size))
             self.weight_b = Parameter(torch.Tensor(
                 out_channels, in_channels // groups, *kernel_size))    
-        if bias:
+        if self.bias:
             self.bias_r = Parameter(torch.Tensor(out_channels))
             self.bias_g = Parameter(torch.Tensor(out_channels))
             self.bias_b = Parameter(torch.Tensor(out_channels))
         else:
-            self.register_parameter('bias', None)
+            self.bias_r = None
+            self.bias_g = None
+            self.bias_b = None
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -220,18 +223,18 @@ class Conv2d_quadratic(_ConvNd):
             in_channels, out_channels, kernel_size, stride, padding, dilation,
             False, _pair(0), groups, bias, padding_mode)
 
-    def conv2d_forward(self, input, weight):
+    def conv2d_forward(self, input, weight, bias):
         if self.padding_mode == 'circular':
             expanded_padding = ((self.padding[1] + 1) // 2, self.padding[1] // 2,
                                 (self.padding[0] + 1) // 2, self.padding[0] // 2)
             return F.conv2d(F.pad(input, expanded_padding, mode='circular'),
-                            weight, self.bias, self.stride,
+                            weight, bias, self.stride,
                             _pair(0), self.dilation, self.groups)
-        return F.conv2d(input, weight, self.bias, self.stride,
+        return F.conv2d(input, weight, bias, self.stride,
                         self.padding, self.dilation, self.groups)
 
     def forward(self, input):
-        y1 = self.conv2d_forward(input, self.weight_r)
-        y2 = self.conv2d_forward(input, self.weight_g)
-        y3 = self.conv2d_forward(input**2, self.weight_b)
-        return y1*y2 + y3
+        y1 = self.conv2d_forward(input, self.weight_r, self.bias_r)
+        y2 = self.conv2d_forward(input, self.weight_g, self.bias_g)
+        y3 = self.conv2d_forward(input**2, self.weight_b, self.bias_b)
+        return y1 * y2 + y3
