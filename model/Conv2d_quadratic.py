@@ -31,7 +31,6 @@ class _ConvNd(Module):
         self.output_padding = output_padding
         self.groups = groups
         self.padding_mode = padding_mode
-        self.bias = bias
         if transposed:
             self.weight_r = Parameter(torch.Tensor(
                 in_channels, out_channels // groups, *kernel_size))
@@ -46,14 +45,16 @@ class _ConvNd(Module):
                 out_channels, in_channels // groups, *kernel_size))
             self.weight_b = Parameter(torch.Tensor(
                 out_channels, in_channels // groups, *kernel_size))    
-        if self.bias:
+        if bias:
             self.bias_r = Parameter(torch.Tensor(out_channels))
             self.bias_g = Parameter(torch.Tensor(out_channels))
             self.bias_b = Parameter(torch.Tensor(out_channels))
+            self.bias = bias
         else:
-            self.bias_r = None
-            self.bias_g = None
-            self.bias_b = None
+            self.register_parameter('bias_r', None)
+            self.register_parameter('bias_g', None)
+            self.register_parameter('bias_b', None)
+            self.register_parameter('bias', None)
         self.reset_parameters()
 
     def reset_parameters(self):

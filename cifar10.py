@@ -23,7 +23,7 @@ parser.add_argument('-b', '--batch-size', default=128, type=int, metavar='N',
                     help='mini-batch size (default: 128),only used for train')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float, metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float, metavar='W',
+parser.add_argument('--weight-decay', '--wd', default=1e-3, type=float, metavar='W',
                     help='weight decay (default: 1e-4)')
 parser.add_argument('--print-freq', '-p', default=10, type=int, metavar='N', help='print frequency (default: 10)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH', help='path to latest checkpoint (default: none)')
@@ -33,7 +33,8 @@ parser.add_argument('-t', '--test', dest='test', action='store_true', help='test
 args = parser.parse_args()
 
 checkpoint_path = 'checkpoint'
-summary_path = 'summary'
+# summary_path = 'summary/ResNet18'
+summary_path = 'summary/ResNet18/first_layer_of_each_block'
 
 if not os.path.exists(checkpoint_path):
     os.makedirs(checkpoint_path)
@@ -57,8 +58,8 @@ valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=arg
 
 
 # model = LinearNeuralNet(input_size, 5, num_classes).to(device)
-model = AlexNet()
-# model = ResNet18()
+# model = AlexNet()
+model = ResNet18()
 model = nn.DataParallel(model, device_ids=args.gpu_id).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -119,7 +120,7 @@ for epoch in range(args.start_epoch, args.epochs):
         train_correct += (predicted == target).sum().item()
 
         prec = train_correct / train_total
-        if i % args.print_freq == 0:
+        if (i+1) % args.print_freq == 0:
             writer.add_scalar('data/loss', ave_loss, epoch * len(train_loader) + i)
             writer.add_scalar('data/prec', prec, epoch * len(train_loader) + i)
             print('Epoch [{}/{}], Step [{}/{}], \
