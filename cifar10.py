@@ -20,6 +20,7 @@ parser.add_argument('--gpu-id', default=[0], nargs='+', type=int, help='availabl
 parser.add_argument('--epochs', default=250, type=int, metavar='N', help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N', help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=128, type=int, metavar='N', help='mini-batch size (default: 128),only used for train')
+parser.add_argument('-w', '--workers', default=0, type=int, metavar='N', help='num_workers, at most 16, must be 0 on windows')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float, metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=1e-3, type=float, metavar='W', help='weight decay (default: 1e-4)')
@@ -29,7 +30,7 @@ parser.add_argument('-t', '--train', dest='train', action='store_true', help='te
 
 args = parser.parse_args()
 
-Path_Name = 'AlexNet/0'
+Path_Name = 'AlexNet/2'
 checkpoint_path = 'checkpoint/' + Path_Name
 summary_path = 'summary/' + Path_Name
 
@@ -60,16 +61,15 @@ valid_dataset = torchvision.datasets.CIFAR10(root='data', train=False, transform
 # valid_dataset, test_dataset = torch.utils.data.random_split(test_dataset, (int(0.5*len(test_dataset)), int(0.5*len(test_dataset))))
 
 # Data loader
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8, pin_memory=True)
+train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
 
 # test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=args.batch_size)
 
 valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=args.batch_size)
 
-
 # model = LinearNeuralNet(input_size, 5, num_classes).to(device)
-# model = AlexNet()
-model = ResNet18()
+model = AlexNet()
+# model = ResNet18()
 model = nn.DataParallel(model, device_ids=args.gpu_id).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
