@@ -17,10 +17,7 @@ device = torch.device('cuda')
 
 parser = argparse.ArgumentParser(description='PyTorch Cifar10 Training')
 parser.add_argument('--gpu-id', nargs='+', type=int, help='available GPU IDs')
-<<<<<<< HEAD
-=======
 parser.add_argument('--epochs', default=250, type=int, metavar='N', help='number of total epochs to run')
->>>>>>> 4a2edb871879566126818af4ed450eea0774a022
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N', help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=128, type=int, metavar='N',
                     help='mini-batch size (default: 128),only used for train')
@@ -96,15 +93,9 @@ if not os.path.exists(summary_path):
 writer = SummaryWriter(summary_path)
 
 for epoch in range(args.start_epoch, args.epochs):
-<<<<<<< HEAD
-    if epoch < 50:
-        lr = args.lr
-    elif epoch < 125:
-=======
     if epoch < 100:
         lr = args.lr
     elif epoch < 175:
->>>>>>> 4a2edb871879566126818af4ed450eea0774a022
         lr = args.lr * 0.1
     else:
         lr = args.lr * 0.01
