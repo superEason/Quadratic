@@ -33,7 +33,8 @@ parser.add_argument('-t', '--test', dest='test', action='store_true', help='test
 args = parser.parse_args()
 
 checkpoint_path = 'checkpoint'
-summary_path = 'summary/ResNet18/4'
+summary_path = 'summary/AlexNet'
+# summary_path = 'summary/ResNet18/4'
 # summary_path = 'summary/ResNet18/first_layer_of_each_block'
 
 if not os.path.exists(checkpoint_path):
@@ -64,8 +65,8 @@ valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=arg
 
 
 # model = LinearNeuralNet(input_size, 5, num_classes).to(device)
-# model = AlexNet()
-model = ResNet18()
+model = AlexNet()
+# model = ResNet18()
 model = nn.DataParallel(model, device_ids=args.gpu_id).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -129,8 +130,7 @@ for epoch in range(args.start_epoch, args.epochs):
         if (i+1) % args.print_freq == 0:
             writer.add_scalar('data/loss', ave_loss, epoch * len(train_loader) + i)
             writer.add_scalar('data/prec', prec, epoch * len(train_loader) + i)
-            print('Epoch [{}/{}], Step [{}/{}], \
-                Loss: {:.5f}, Train_Acc:{:.2f}%'.format(epoch+1, args.epochs, i+1, len(train_loader), ave_loss, prec*100))
+            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.5f}, Train_Acc:{:.2f}%'.format(epoch+1, args.epochs, i+1, len(train_loader), ave_loss, prec*100))
 
 
     # evaluate on test set
