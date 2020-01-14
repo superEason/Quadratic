@@ -2,3 +2,5 @@
 /summary/
 /cifar-densenet/
 .vscode
+*.log
+*.ipynb
