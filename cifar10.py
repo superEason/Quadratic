@@ -93,9 +93,15 @@ if not os.path.exists(summary_path):
 writer = SummaryWriter(summary_path)
 
 for epoch in range(args.start_epoch, args.epochs):
+<<<<<<< HEAD
+    if epoch < 50:
+        lr = args.lr
+    elif epoch < 125:
+=======
     if epoch < 100:
         lr = args.lr
     elif epoch < 175:
+>>>>>>> 4a2edb871879566126818af4ed450eea0774a022
         lr = args.lr * 0.1
     else:
         lr = args.lr * 0.01
