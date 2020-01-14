@@ -14,7 +14,7 @@ device = torch.device('cuda')
 
 parser = argparse.ArgumentParser(description='PyTorch Cifar10 Training')
 parser.add_argument('--gpu-id', nargs='+', type=int, help='available GPU IDs')
-parser.add_argument('--epochs', default=300, type=int, metavar='N', help='number of total epochs to run')
+parser.add_argument('--epochs', default=200, type=int, metavar='N', help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N', help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=128, type=int, metavar='N',
                     help='mini-batch size (default: 128),only used for train')
@@ -32,17 +32,19 @@ args = parser.parse_args()
 train_transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
 test_transform = transforms.Compose([transforms.ToTensor()])
 
+
+
 # CIFAR10 dataset 
 train_dataset = torchvision.datasets.CIFAR10(root='data', train=True, transform=train_transform, download=True)
 
-test_dataset = torchvision.datasets.CIFAR10(root='data', train=False, transform=test_transform)
+valid_dataset = torchvision.datasets.CIFAR10(root='data', train=False, transform=test_transform)
 
-valid_dataset, test_dataset = torch.utils.data.random_split(test_dataset, (int(0.5*len(test_dataset)), int(0.5*len(test_dataset))))
+# valid_dataset, test_dataset = torch.utils.data.random_split(test_dataset, (int(0.5*len(test_dataset)), int(0.5*len(test_dataset))))
 
 # Data loader
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=args.batch_size)
 
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=args.batch_size)
+# test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=args.batch_size)
 
 valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=args.batch_size)
 
@@ -57,9 +59,9 @@ cudnn.benchmark = True
 
 
 for epoch in range(args.start_epoch, args.epochs):
-    if epoch < 150:
+    if epoch < 50:
         lr = args.lr
-    elif epoch < 225:
+    elif epoch < 125:
         lr = args.lr * 0.1
     else:
         lr = args.lr * 0.01
