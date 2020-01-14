@@ -48,8 +48,8 @@ valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=arg
 
 
 # model = LinearNeuralNet(input_size, 5, num_classes).to(device)
-model = AlexNet()
-# model = ResNet18()
+# model = AlexNet()
+model = ResNet18()
 model = nn.DataParallel(model, device_ids=args.gpu_id).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -85,7 +85,8 @@ for epoch in range(args.start_epoch, args.epochs):
         
         train_loss += loss.item()
         ave_loss = train_loss/(i+1)
-
+        if loss.item()>3:
+            print(loss.item())
         if i % args.print_freq == 0:
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, args.epochs, i+1, len(train_loader), ave_loss))
 
