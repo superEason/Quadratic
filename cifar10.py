@@ -29,7 +29,7 @@ parser.add_argument('-t', '--train', dest='train', action='store_true', help='te
 
 args = parser.parse_args()
 
-Path_Name = 'AlexNet/0'
+Path_Name = 'AlexNet/2'
 checkpoint_path = 'checkpoint/' + Path_Name
 summary_path = 'summary/' + Path_Name
 
