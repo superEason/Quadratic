@@ -16,26 +16,27 @@ from tensorboardX import SummaryWriter
 device = torch.device('cuda')
 
 parser = argparse.ArgumentParser(description='PyTorch Cifar10 Training')
-parser.add_argument('--gpu-id', nargs='+', type=int, help='available GPU IDs')
+parser.add_argument('--gpu-id', default=[0], nargs='+', type=int, help='available GPU IDs')
 parser.add_argument('--epochs', default=250, type=int, metavar='N', help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N', help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=128, type=int, metavar='N',
-                    help='mini-batch size (default: 128),only used for train')
+parser.add_argument('-b', '--batch-size', default=128, type=int, metavar='N', help='mini-batch size (default: 128),only used for train')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float, metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=1e-3, type=float, metavar='W',
-                    help='weight decay (default: 1e-4)')
+parser.add_argument('--weight-decay', '--wd', default=1e-3, type=float, metavar='W', help='weight decay (default: 1e-4)')
 parser.add_argument('--print-freq', '-p', default=10, type=int, metavar='N', help='print frequency (default: 10)')
 parser.add_argument('--resume', default='', type=str, metavar='PATH', help='path to latest checkpoint (default: none)')
-parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true', help='evaluate model on validation set')
-parser.add_argument('-t', '--test', dest='test', action='store_true', help='test model on test set')
+parser.add_argument('-t', '--train', dest='train', action='store_true', help='test model on test set')
 
 args = parser.parse_args()
 
-checkpoint_path = 'checkpoint'
-summary_path = 'summary/AlexNet'
-# summary_path = 'summary/ResNet18/4'
-# summary_path = 'summary/ResNet18/first_layer_of_each_block'
+Path_Name = 'AlexNet/0'
+checkpoint_path = 'checkpoint/' + Path_Name
+summary_path = 'summary/' + Path_Name
+
+if args.train:
+    if not os.path.exists(summary_path):
+        os.makedirs(summary_path)
+    writer = SummaryWriter(summary_path)
 
 if not os.path.exists(checkpoint_path):
     os.makedirs(checkpoint_path)
@@ -87,11 +88,6 @@ if args.resume:
     else:
         print("=> no checkpoint found at '{}'".format(args.resume))
 
-if not os.path.exists(summary_path):
-    os.makedirs(summary_path)
-
-writer = SummaryWriter(summary_path)
-
 for epoch in range(args.start_epoch, args.epochs):
     if epoch < 100:
         lr = args.lr
@@ -130,9 +126,10 @@ for epoch in range(args.start_epoch, args.epochs):
 
         prec = train_correct / train_total
         if (i+1) % args.print_freq == 0:
-            writer.add_scalar('data/loss', ave_loss, epoch * len(train_loader) + i)
-            writer.add_scalar('data/prec', prec, epoch * len(train_loader) + i)
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.5f}, Train_Acc:{:.2f}%'.format(epoch+1, args.epochs, i+1, len(train_loader), ave_loss, prec*100))
+            if args.train:
+                writer.add_scalar('data/loss', ave_loss, epoch * len(train_loader) + i)
+                writer.add_scalar('data/prec', prec, epoch * len(train_loader) + i)
 
 
     # evaluate on test set
@@ -153,7 +150,8 @@ for epoch in range(args.start_epoch, args.epochs):
             valid_correct += (predicted == target).sum().item()
     prec = valid_correct / valid_total
     print('Accuary on test images:{:.2f}%'.format(prec*100))
-    writer.add_scalar('data/accuracy', prec, epoch)
+    if args.train:
+        writer.add_scalar('data/accuracy', prec, epoch)
 
     is_best = prec > best_prec
     best_prec = max(prec, best_prec)
@@ -167,6 +165,7 @@ for epoch in range(args.start_epoch, args.epochs):
         }, filepath)
     if is_best:
         shutil.copyfile(filepath, os.path.join(checkpoint_path, 'model_best.pth.tar'))
-print(best_prec)
+
+print('Best accuracy is: {:.2f}%', best_prec)
 
 
