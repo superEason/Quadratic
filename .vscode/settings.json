@@ -1,5 +1,0 @@
-{
-    "python.pythonPath": "/home/fyx/anaconda3/envs/quadratic/bin/python",
-    "python.linting.pylintArgs": ["--generate-members"],
-
-}
