@@ -17,7 +17,7 @@ device = torch.device('cuda')
 
 parser = argparse.ArgumentParser(description='PyTorch Cifar10 Training')
 parser.add_argument('--gpu-id', nargs='+', type=int, help='available GPU IDs')
-parser.add_argument('--epochs', default=300, type=int, metavar='N', help='number of total epochs to run')
+parser.add_argument('--epochs', default=250, type=int, metavar='N', help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N', help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=128, type=int, metavar='N',
                     help='mini-batch size (default: 128),only used for train')
@@ -33,26 +33,32 @@ parser.add_argument('-t', '--test', dest='test', action='store_true', help='test
 args = parser.parse_args()
 
 checkpoint_path = 'checkpoint'
-# summary_path = 'summary/ResNet18'
-summary_path = 'summary/ResNet18/first_layer_of_each_block'
+summary_path = 'summary/ResNet18/4'
+# summary_path = 'summary/ResNet18/first_layer_of_each_block'
 
 if not os.path.exists(checkpoint_path):
     os.makedirs(checkpoint_path)
 
-train_transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
-test_transform = transforms.Compose([transforms.ToTensor()])
+train_transform = transforms.Compose([transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),])
+test_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
 
 # CIFAR10 dataset 
 train_dataset = torchvision.datasets.CIFAR10(root='data', train=True, transform=train_transform, download=True)
 
-test_dataset = torchvision.datasets.CIFAR10(root='data', train=False, transform=test_transform)
+valid_dataset = torchvision.datasets.CIFAR10(root='data', train=False, transform=test_transform)
 
-valid_dataset, test_dataset = torch.utils.data.random_split(test_dataset, (int(0.5*len(test_dataset)), int(0.5*len(test_dataset))))
+# valid_dataset, test_dataset = torch.utils.data.random_split(test_dataset, (int(0.5*len(test_dataset)), int(0.5*len(test_dataset))))
 
 # Data loader
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=args.batch_size)
+train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8, pin_memory=True)
 
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=args.batch_size)
+# test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=args.batch_size)
 
 valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=args.batch_size)
 
@@ -84,9 +90,9 @@ if not os.path.exists(summary_path):
 writer = SummaryWriter(summary_path)
 
 for epoch in range(args.start_epoch, args.epochs):
-    if epoch < 150:
+    if epoch < 100:
         lr = args.lr
-    elif epoch < 225:
+    elif epoch < 175:
         lr = args.lr * 0.1
     else:
         lr = args.lr * 0.01
@@ -159,7 +165,6 @@ for epoch in range(args.start_epoch, args.epochs):
         }, filepath)
     if is_best:
         shutil.copyfile(filepath, os.path.join(checkpoint_path, 'model_best.pth.tar'))
-
-
+print(best_prec)
 
 
