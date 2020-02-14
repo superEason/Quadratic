@@ -7,6 +7,7 @@ import torch.backends.cudnn as cudnn
 
 from model.quadraticnet import AlexNet
 from model.quadraticnet import ResNet18
+from model.quadraticnet import VGG
 import argparse
 
 import os
@@ -30,7 +31,7 @@ parser.add_argument('-t', '--train', dest='train', action='store_true', help='te
 
 args = parser.parse_args()
 
-Path_Name = 'AlexNet/2'
+Path_Name = 'Vgg19/2'
 checkpoint_path = 'checkpoint/' + Path_Name
 summary_path = 'summary/' + Path_Name
 
@@ -68,8 +69,9 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=arg
 valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=args.batch_size)
 
 # model = LinearNeuralNet(input_size, 5, num_classes).to(device)
-model = AlexNet()
+# model = AlexNet()
 # model = ResNet18()
+model = VGG('VGG19')
 model = nn.DataParallel(model, device_ids=args.gpu_id).cuda()
 criterion = nn.CrossEntropyLoss().cuda()
 optimizer = optim.SGD(model.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -166,6 +168,6 @@ for epoch in range(args.start_epoch, args.epochs):
     if is_best:
         shutil.copyfile(filepath, os.path.join(checkpoint_path, 'model_best.pth.tar'))
 
-print('Best accuracy is: {:.2f}%', best_prec)
+print('Best accuracy is: {:.2f}%'.format(best_prec*100))
 
 
