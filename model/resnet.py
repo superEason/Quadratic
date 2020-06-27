@@ -1,51 +1,15 @@
+'''ResNet in PyTorch.
+
+For Pre-activation ResNet, see 'preact_resnet.py'.
+
+Reference:
+[1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
+    Deep Residual Learning for Image Recognition. arXiv:1512.03385
+'''
+import torch
 import torch.nn as nn
-import model.Conv2d_quadratic as Cq
 import torch.nn.functional as F
 
-'''
-modified to fit dataset size
-'''
-NUM_CLASSES = 10
-
-
-class AlexNet(nn.Module):
-    def __init__(self, num_classes=NUM_CLASSES):
-        super(AlexNet, self).__init__()
-        self.features = nn.Sequential(
-            # Cq.Conv2d_quadratic(3, 64, kernel_size=3, stride=2, padding=1),
-            nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2),
-            # Cq.Conv2d_quadratic(64, 192, kernel_size=3, padding=1),
-            nn.Conv2d(64, 192, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2),
-            # Cq.Conv2d_quadratic(192, 384, kernel_size=3, padding=1),
-            nn.Conv2d(192, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            # Cq.Conv2d_quadratic(384, 256, kernel_size=3, padding=1),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            Cq.Conv2d_quadratic(256, 256, kernel_size=3, padding=1, bias=None),
-            # nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2),
-        )
-        self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(256 * 2 * 2, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(4096, num_classes),
-        )
-
-    def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), 256 * 2 * 2)
-        x = self.classifier(x)
-        return x
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -53,7 +17,6 @@ class BasicBlock(nn.Module):
     def __init__(self, in_planes, planes, stride=1):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        # self.conv1 = Cq.Conv2d_quadratic(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
@@ -150,42 +113,9 @@ def ResNet152():
     return ResNet(Bottleneck, [3,8,36,3])
 
 
-cfg = {
-    'VGG11': [-64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    'VGG13': [-64, -64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    'VGG16': [-64, -64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
-    'VGG19': [-64, -64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
-}
+def test():
+    net = ResNet18()
+    y = net(torch.randn(1,3,32,32))
+    print(y.size())
 
-
-class VGG(nn.Module):
-    def __init__(self, vgg_name):
-        super(VGG, self).__init__()
-        self.features = self._make_layers(cfg[vgg_name])
-        self.classifier = nn.Linear(512, 10)
-
-    def forward(self, x):
-        out = self.features(x)
-        out = out.view(out.size(0), -1)
-        out = self.classifier(out)
-        return out
-
-    def _make_layers(self, cfg):
-        layers = []
-        in_channels = 3
-        for x in cfg:
-            if x == 'M':
-                layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
-            else:
-                if x>0:
-                    layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
-                            nn.BatchNorm2d(x),
-                            nn.ReLU(inplace=True)]
-                    in_channels = x
-                else:
-                    layers += [Cq.Conv2d_quadratic(in_channels, -x, kernel_size=3, padding=1),
-                            nn.BatchNorm2d(-x),
-                            nn.ReLU(inplace=True)]
-                    in_channels = -x
-        layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
-        return nn.Sequential(*layers)
+# test()

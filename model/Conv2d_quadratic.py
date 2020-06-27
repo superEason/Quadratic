@@ -238,4 +238,12 @@ class Conv2d_quadratic(_ConvNd):
         y1 = self.conv2d_forward(input, self.weight_r, self.bias_r)
         y2 = self.conv2d_forward(input, self.weight_g, self.bias_g)
         y3 = self.conv2d_forward(input**2, self.weight_b, self.bias_b)
-        return y1 * y2 + y3
+        return y1.mul(y2) + y3
+
+    def load(self, Conv2d):
+        self.weight_r = Conv2d.weight
+        self.weight_g = init.zeros_(self.weight_g)
+        self.weight_b = init.zeros_(self.weight_b)   
+        self.bias_r = Conv2d.bias
+        self.bias_g = init.ones_(self.bias_g)
+        self.bias_b = init.zeros_(self.bias_b)
